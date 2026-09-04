@@ -1,39 +1,61 @@
-const express    = require('express'),
-      app        = express(),
-      dreams     = []
+// const express    = require('express'),
+//       app        = express(),
+//       dreams     = []
 
-app.use( express.static( 'public' ) )
-app.use( express.static( 'views'  ) )
+// app.use( express.static( 'public' ) )
+// app.use( express.static( 'views'  ) )
+// app.use( express.json() )
+
+// app.post( '/submit', express.json(), ( req, res ) => {
+//   dreams.push( req.body.newdream )
+//   res.writeHead( 200, { 'Content-Type': 'application/json'})
+//   res.end( JSON.stringify( dreams ) )
+// })
+
+// app.listen( process.env.PORT || 3000 )
+
+require( 'dotenv' ).config()
+
+const express = require("express"),
+      { MongoClient, ObjectId } = require("mongodb"),
+      app = express()
+
+app.use( express.static( "public" ) )
 app.use( express.json() )
 
-app.post( '/submit', express.json(), ( req, res ) {
-  dreams.push( req.body.newdream )
-  res.writeHead( 200, { 'Content-Type': 'application/json'})
-  res.end( JSON.stringify( dreams ) )
+const uri = `mongodb+srv://${process.env.MONGOUSER}:${process.env.MONGOPASSWORD}@${process.env.MONGOHOST}`
+// check for sanity
+console.log( 'uri:', uri )
+const client = new MongoClient( uri )
+
+let collection = null
+
+app.use( (req,res,next) => {
+  if( collection !== null ) {
+    next()
+  }else{
+    res.status( 503 ).send()
+  }
 })
 
-app.listen( process.env.PORT || 3000 )
+app.post( '/add', async (req,res) => {
+  const result = await collection.insertOne( req.body )
+  res.json( result )
+})
 
-const { MongoClient, ServerApiVersion } = require('mongodb');
-const uri = "mongodb+srv://teaganmtran_db_user:6lib2TAg7LCXbq0C@a3-teagantran.yufho2h.mongodb.net/?appName=a3-teagantran";
-// Create a MongoClient with a MongoClientOptions object to set the Stable API version
-const client = new MongoClient(uri, {
-  serverApi: {
-    version: ServerApiVersion.v1,
-    strict: true,
-    deprecationErrors: true,
-  }
-});
 async function run() {
-  try {
-    // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
-    // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
-    console.log("Pinged your deployment. You successfully connected to MongoDB!");
-  } finally {
-    // Ensures that the client will close when you finish/error
-    await client.close();
-  }
+  await client.connect()
+  collection = await client.db("datatest").collection("test")
+
+  // route to get all docs
+  app.get("/docs", async (req, res) => {
+    if (collection !== null) {
+      const docs = await collection.find({}).toArray()
+      res.json( docs )
+    }
+  })
 }
-run().catch(console.dir);
+
+run()
+
+app.listen(3000)
