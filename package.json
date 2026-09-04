@@ -1,0 +1,15 @@
+{
+  "name": "a2-teagantran",
+  "version": "0.1",
+  "description": "2nd assignment for Webware",
+  "author": "Teagan Tran",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "mime": "^2.4.4"
+  },
+  "engines": {
+     "node":"24.x"
+  }
+}
